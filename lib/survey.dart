@@ -9,6 +9,8 @@ import 'package:http/http.dart' as http;
 import 'package:email_validator/email_validator.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
+enum SaveDataButtonState { init, loading }
+
 class Survey extends StatefulWidget {
   final Token token;
   final SurveyData surveyData;
@@ -38,9 +40,13 @@ class _SurveyState extends State<Survey> {
 
   int qualification = 0;
 
+  SaveDataButtonState saveDataButtonState = SaveDataButtonState.init;
+
   Future<void> saveData() async {
     if (!validateFields()) return;
-
+    setState(() {
+      saveDataButtonState = SaveDataButtonState.loading;
+    });
     Map<String, dynamic> data = {
       'email': emailController.text,
       'theBest': theBestController.text,
@@ -60,15 +66,16 @@ class _SurveyState extends State<Survey> {
 
     Fluttertoast.showToast(
         msg: "Datos guardados",
-        toastLength: Toast.LENGTH_LONG,
+        toastLength: Toast.LENGTH_SHORT,
         gravity: ToastGravity.CENTER,
         timeInSecForIosWeb: 1,
         backgroundColor: Colors.red,
         textColor: Colors.white,
         fontSize: 16.0);
 
-    print(response.statusCode);
-    print(response.body);
+    setState(() {
+      saveDataButtonState = SaveDataButtonState.init;
+    });
   }
 
   bool validateFields() {
@@ -81,6 +88,9 @@ class _SurveyState extends State<Survey> {
     setState(() {
       invalidEmailErrorMessage =
           invalidEmail ? 'You must enter a valid email' : '';
+      invalidEmailErrorMessage = email.contains('correo.itm.edu.co')
+          ? invalidEmailErrorMessage
+          : 'Debes de ingresar un correo con el dominio del ITM';
       invalidRemarksErrorMessage =
           remarks.isEmpty ? 'Debes de ingresar los comentarios generales' : '';
       invalidTheBestErrorMessage = theBest.isEmpty
@@ -95,9 +105,6 @@ class _SurveyState extends State<Survey> {
         invalidRemarksErrorMessage.isEmpty &&
         invalidTheBestErrorMessage.isEmpty &&
         invalidTheWorstErrorMessage.isEmpty) {
-      // setState(() {
-      //   signInButtonState = SignInButtonState.loading;
-      // });
       return true;
     }
 
@@ -124,9 +131,7 @@ class _SurveyState extends State<Survey> {
         child: Center(
           child: Container(
               padding: const EdgeInsets.only(left: 25, right: 25),
-              child:
-                  // !loadingData  ?
-                  Column(
+              child: Column(
                 children: <Widget>[
                   const SizedBox(height: 30),
                   TextField(
@@ -275,29 +280,27 @@ class _SurveyState extends State<Survey> {
                     onPressed: () {
                       saveData();
                     },
-                    icon: const FaIcon(
-                      FontAwesomeIcons.shareSquare,
-                      size: 20,
-                    ),
-                    label: const Text('Enviar'),
+                    icon: saveDataButtonState == SaveDataButtonState.init
+                        ? const FaIcon(
+                            FontAwesomeIcons.shareSquare,
+                            size: 20,
+                          )
+                        : const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          ),
+                    label: saveDataButtonState == SaveDataButtonState.init
+                        ? const Text('Enviar')
+                        : const Text('Enviando'),
                     style: ElevatedButton.styleFrom(
                         fixedSize: const Size(350, 40)),
                   )
                 ],
-              )
-              // : Column(
-              //     mainAxisAlignment: MainAxisAlignment.center,
-              //     crossAxisAlignment: CrossAxisAlignment.center,
-              //     children: const <Widget>[
-              //       SizedBox(
-              //         height: 270,
-              //       ),
-              //       SizedBox(
-              //         child: CircularProgressIndicator(),
-              //       )
-              //     ],
-              //   ),
-              ),
+              )),
         ),
       ),
     );

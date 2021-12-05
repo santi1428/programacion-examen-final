@@ -55,7 +55,6 @@ class _HomeScreenState extends State<HomeScreen> {
     var body = response.body;
     var decodedJson = jsonDecode(body);
     var token = Token.fromJson(decodedJson);
-    print(token.token);
     getData(token);
   }
 
