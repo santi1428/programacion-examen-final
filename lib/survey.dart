@@ -6,6 +6,8 @@ import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'models/survey_data.dart';
 import 'package:http/http.dart' as http;
+import 'package:email_validator/email_validator.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class Survey extends StatefulWidget {
   final Token token;
@@ -26,9 +28,19 @@ class _SurveyState extends State<Survey> {
 
   var remarksController = TextEditingController();
 
+  String invalidEmailErrorMessage = '';
+
+  String invalidTheBestErrorMessage = '';
+
+  String invalidTheWorstErrorMessage = '';
+
+  String invalidRemarksErrorMessage = '';
+
   int qualification = 0;
 
   Future<void> saveData() async {
+    if (!validateFields()) return;
+
     Map<String, dynamic> data = {
       'email': emailController.text,
       'theBest': theBestController.text,
@@ -46,8 +58,50 @@ class _SurveyState extends State<Survey> {
         },
         body: jsonEncode(data));
 
+    Fluttertoast.showToast(
+        msg: "Datos guardados",
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.CENTER,
+        timeInSecForIosWeb: 1,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+        fontSize: 16.0);
+
     print(response.statusCode);
     print(response.body);
+  }
+
+  bool validateFields() {
+    final String email = emailController.text.trim();
+    final String theBest = theBestController.text.trim();
+    final bool invalidEmail = !EmailValidator.validate(email);
+    final String theWorst = theWorstController.text.trim();
+    final String remarks = remarksController.text.trim();
+
+    setState(() {
+      invalidEmailErrorMessage =
+          invalidEmail ? 'You must enter a valid email' : '';
+      invalidRemarksErrorMessage =
+          remarks.isEmpty ? 'Debes de ingresar los comentarios generales' : '';
+      invalidTheBestErrorMessage = theBest.isEmpty
+          ? 'Debes de ingresar lo que mas te gusto del curso'
+          : '';
+      invalidTheWorstErrorMessage = theWorst.isEmpty
+          ? 'Debes de ingresar lo que menos te gusto del curso'
+          : '';
+    });
+
+    if (invalidEmailErrorMessage.isEmpty &&
+        invalidRemarksErrorMessage.isEmpty &&
+        invalidTheBestErrorMessage.isEmpty &&
+        invalidTheWorstErrorMessage.isEmpty) {
+      // setState(() {
+      //   signInButtonState = SignInButtonState.loading;
+      // });
+      return true;
+    }
+
+    return false;
   }
 
   @override
@@ -75,7 +129,7 @@ class _SurveyState extends State<Survey> {
                   Column(
                 children: <Widget>[
                   const SizedBox(height: 30),
-                  TextFormField(
+                  TextField(
                     decoration: InputDecoration(
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10.0),
@@ -83,6 +137,9 @@ class _SurveyState extends State<Survey> {
                       labelText: 'Email',
                       hintText: 'Ingresa tu email',
                       labelStyle: const TextStyle(fontSize: 19),
+                      errorText: invalidEmailErrorMessage.isNotEmpty
+                          ? invalidEmailErrorMessage
+                          : null,
                       // errorText: invalidEmailErrorMessage.isNotEmpty
                       //     ? invalidEmailErrorMessage
                       //     : null,
@@ -119,9 +176,13 @@ class _SurveyState extends State<Survey> {
                       //       ? AppColors.error
                       //       : Colors.blue.shade400,
                       // ),
+                      errorText: invalidTheBestErrorMessage.isNotEmpty
+                          ? invalidTheBestErrorMessage
+                          : null,
                     ),
                     controller: theBestController,
                     maxLines: 2,
+
                     // controller: emailController,
                   ),
                   const SizedBox(
@@ -145,6 +206,9 @@ class _SurveyState extends State<Survey> {
                       //       ? AppColors.error
                       //       : Colors.blue.shade400,
                       // ),
+                      errorText: invalidTheWorstErrorMessage.isNotEmpty
+                          ? invalidTheWorstErrorMessage
+                          : null,
                     ),
                     maxLines: 2,
                     controller: theWorstController,
@@ -172,6 +236,9 @@ class _SurveyState extends State<Survey> {
                       //       ? AppColors.error
                       //       : Colors.blue.shade400,
                       // ),
+                      errorText: invalidRemarksErrorMessage.isNotEmpty
+                          ? invalidRemarksErrorMessage
+                          : null,
                     ),
                     maxLines: 2,
                     controller: remarksController,
